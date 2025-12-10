@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente Vinted con Imagen</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ml5/0.12.2/ml5.min.js"></script>
+<style>
+body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 20px; background: #f5f5f5; }
+h1 { text-align: center; }
+label { font-weight: bold; margin-top: 15px; display: block; }
+input, select, button, textarea { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; }
+textarea { height: 200px; font-family: monospace; }
+.card { background: #fff; padding: 20px; margin: 20px 0; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+button { background: #007bff; color: #fff; border: none; cursor: pointer; font-weight: bold; }
+button:hover { background: #0056b3; }
+.copy-btn { background: #28a745; margin-top: 10px; }
+.copy-btn:hover { background: #1e7e34; }
+img { max-width: 100%; margin-top: 10px; border-radius: 5px; }
+</style>
+</head>
+<body>
+<h1>Asistente Vinted con Imagen</h1>
+
+<label>Sube una imagen de la prenda:</label>
+<input type="file" id="imagen" accept="image/*">
+
+<label>Sexo:</label>
+<select id="sexo">
+  <option value="">Selecciona</option>
+  <option value="Mujer">Mujer</option>
+  <option value="Hombre">Hombre</option>
+</select>
+
+<label>Talla:</label>
+<input type="text" id="talla" placeholder="Ej: L">
+
+<label>Estilo:</label>
+<input type="text" id="estilo" placeholder="Ej: Skate, Chic, Streetwear">
+
+<button onclick="analizarImagen()">Generar descripción</button>
+
+<h2>Prenda Detectada</h2>
+<div id="resultado" class="card"></div>
+
+<script>
+let classifier;
+
+function cargarModelo() {
+  classifier = ml5.imageClassifier('MobileNet', () => {
+    console.log('Modelo cargado');
+  });
+}
+
+cargarModelo();
+
+function analizarImagen() {
+  const fileInput = document.getElementById('imagen');
+  if(fileInput.files.length === 0){
+    alert("Selecciona una imagen primero");
+    return;
+  }
+
+  const sexo = document.getElementById('sexo').value;
+  const talla = document.getElementById('talla').value.trim();
+  const estilo = document.getElementById('estilo').value.trim();
+
+  const reader = new FileReader();
+  reader.onload = function(event){
+    const img = new Image();
+    img.src = event.target.result;
+    img.onload = () => {
+      classifier.classify(img, (err, results)=>{
+        if(err){ console.error(err); return; }
+        const pred = results[0].label; // etiqueta predicha
+        const titulo = generarTitulo(pred, talla, sexo, estilo);
+        const subtitulo = generarSubtitulo(pred, sexo, estilo);
+        const hashtags = generarHashtags(pred, sexo, estilo);
+
+        document.getElementById('resultado').innerHTML = `
+          <img src="${img.src}">
+          <strong>${titulo}</strong><br><br>
+          ${subtitulo}<br><br>
+          ${hashtags.join(" ")}<br><br>
+          <textarea readonly>${titulo}\n\n${subtitulo}\n\nHashtags: ${hashtags.join(" ")}</textarea>
+          <button class="copy-btn" onclick="copiarTexto(this)">Copiar al portapapeles</button>
+        `;
+      });
+    };
+  };
+  reader.readAsDataURL(fileInput.files[0]);
+}
+
+// Funciones para generar título/subtítulo/hashtags coherentes
+function generarTitulo(tipo, talla, sexo, estilo){
+  const vocabSEO = ["Streetwear","Oversize","Casual","Chic","Sporty","Urban","Skate","Comfy","Luxury","Retro"];
+  let extra = [];
+  while(extra.join(' ').length < 40){
+    let w = vocabSEO[Math.floor(Math.random()*vocabSEO.length)];
+    if(!extra.includes(w)) extra.push(w);
+  }
+  let t = `${tipo} ${sexo || ""} Talla ${talla || ""} ${estilo || ""} ${extra.join(' ')}`;
+  return t.trim();
+}
+
+function generarSubtitulo(tipo, sexo, estilo){
+  return `${tipo} para ${sexo || "adulto"}, estilo ${estilo || "moderno y cómodo"}, ideal para looks urbanos y fashion.`;
+}
+
+function generarHashtags(tipo, sexo, estilo){
+  const base = [`#${tipo.replace(/\s+/g,'')}`, `#${sexo?.toLowerCase() || ''}`, `#${estilo.replace(/\s+/g,'') || ''}`, "#mujerchic"];
+  const extras = ["#streetwear","#oversize","#casual","#chic","#sporty","#urban","#skate","#comfy","#luxury","#retro"];
+  let hashtags = [...base];
+  for(let i=0;i<extras.length && hashtags.length<15;i++){
+    if(!hashtags.includes(extras[i])) hashtags.push(extras[i]);
+  }
+  return hashtags.slice(0,15);
+}
+
+function copiarTexto(btn){
+  const text = btn.previousElementSibling.value;
+  navigator.clipboard.writeText(text).then(()=>{ alert("Descripción copiada al portapapeles"); });
+}
+</script>
+</body>
+</html>
