@@ -38,6 +38,9 @@ img { max-width: 100%; margin-top: 10px; border-radius: 5px; }
 <label>Estilo:</label>
 <input type="text" id="estilo" placeholder="Ej: Skate, Chic, Streetwear">
 
+<!-- Botón visible para generar descripción -->
+<button id="generarBtn">Generar descripción</button>
+
 <h2>Prenda Detectada</h2>
 <div id="resultado" class="card"></div>
 
@@ -87,7 +90,6 @@ function generarHashtags(tipo, sexo, estilo){
     return hashtags.slice(0,15);
 }
 
-// Función principal
 function analizarImagen() {
     const fileInput = document.getElementById('imagen');
     if(fileInput.files.length === 0){
@@ -103,7 +105,6 @@ function analizarImagen() {
     reader.onload = function(event){
         const img = new Image();
         img.src = event.target.result;
-        img.id = "prendaAnalisis";
         img.width = 224; img.height = 224;
         img.style.display = "none";
         document.body.appendChild(img);
@@ -134,10 +135,14 @@ function analizarImagen() {
     reader.readAsDataURL(fileInput.files[0]);
 }
 
+// Copiar al portapapeles
 function copiarTexto(btn){
     const text = btn.previousElementSibling.value;
     navigator.clipboard.writeText(text).then(()=>{ alert("Descripción copiada al portapapeles"); });
 }
+
+// Enlazar botón
+document.getElementById('generarBtn').addEventListener('click', analizarImagen);
 </script>
 </body>
 </html>
