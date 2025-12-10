@@ -38,17 +38,21 @@ img { max-width: 100%; margin-top: 10px; border-radius: 5px; }
 <label>Estilo:</label>
 <input type="text" id="estilo" placeholder="Ej: Skate, Chic, Streetwear">
 
-<!-- Botón visible para generar descripción -->
 <button id="generarBtn">Generar descripción</button>
 
 <h2>Prenda Detectada</h2>
 <div id="resultado" class="card"></div>
 
 <script>
-// Inicializar el clasificador
-let classifier = ml5.imageClassifier('MobileNet', () => { console.log('Modelo cargado'); });
+let classifier = null;
 
-// Función para obtener color dominante
+ml5.imageClassifier('MobileNet').then(model => {
+  classifier = model;
+  console.log('Modelo cargado');
+});
+
+const vocabSEO = ["Streetwear","Oversize","Casual","Chic","Sporty","Urban","Skate","Comfy","Luxury","Retro"];
+
 function obtenerColorDominante(img){
     const canvas = document.createElement("canvas");
     canvas.width = img.width; canvas.height = img.height;
@@ -62,9 +66,6 @@ function obtenerColorDominante(img){
     r=Math.round(r/count); g=Math.round(g/count); b=Math.round(b/count);
     return `rgb(${r},${g},${b})`;
 }
-
-// Funciones de generación de texto
-const vocabSEO = ["Streetwear","Oversize","Casual","Chic","Sporty","Urban","Skate","Comfy","Luxury","Retro"];
 
 function generarTitulo(tipo, talla, sexo, estilo){
     let extra = [];
@@ -97,6 +98,11 @@ function analizarImagen() {
         return;
     }
 
+    if(!classifier){
+        alert("El modelo aún no está cargado, espera unos segundos.");
+        return;
+    }
+
     const sexo = document.getElementById('sexo').value;
     const talla = document.getElementById('talla').value.trim();
     const estilo = document.getElementById('estilo').value.trim();
@@ -106,43 +112,45 @@ function analizarImagen() {
         const img = new Image();
         img.src = event.target.result;
         img.width = 224; img.height = 224;
-        img.style.display = "none";
+        img.style.display = "block"; // importante que sea visible para MobileNet
         document.body.appendChild(img);
 
         img.onload = () => {
-            classifier.classify(img, (err, results)=>{
-                if(err){ console.error(err); return; }
-                const tipo = results[0].label.split(",")[0]; // primera predicción
-                const colorDominante = obtenerColorDominante(img);
+            // Pequeña espera para asegurar carga completa
+            setTimeout(()=>{
+                classifier.classify(img).then(results => {
+                    console.log(results);
+                    const tipo = results[0].label.split(",")[0];
+                    const colorDominante = obtenerColorDominante(img);
 
-                const titulo = generarTitulo(tipo, talla, sexo, estilo);
-                const subtitulo = generarSubtitulo(tipo, sexo, estilo);
-                const hashtags = generarHashtags(tipo, sexo, estilo);
+                    const titulo = generarTitulo(tipo, talla, sexo, estilo);
+                    const subtitulo = generarSubtitulo(tipo, sexo, estilo);
+                    const hashtags = generarHashtags(tipo, sexo, estilo);
 
-                document.getElementById('resultado').innerHTML = `
-                    <img src="${img.src}" style="max-width:300px;">
-                    <p><strong>${titulo}</strong></p>
-                    <p>${subtitulo}</p>
-                    <p style="color:${colorDominante}">Color aproximado: ${colorDominante}</p>
-                    <p>${hashtags.join(" ")}</p>
-                    <textarea readonly>${titulo}\n\n${subtitulo}\n\nColor: ${colorDominante}\n\nHashtags: ${hashtags.join(" ")}</textarea>
-                    <button class="copy-btn" onclick="copiarTexto(this)">Copiar al portapapeles</button>
-                `;
-                img.remove();
-            });
+                    document.getElementById('resultado').innerHTML = `
+                        <img src="${img.src}" style="max-width:300px;">
+                        <p><strong>${titulo}</strong></p>
+                        <p>${subtitulo}</p>
+                        <p style="color:${colorDominante}">Color aproximado: ${colorDominante}</p>
+                        <p>${hashtags.join(" ")}</p>
+                        <textarea readonly>${titulo}\n\n${subtitulo}\n\nColor: ${colorDominante}\n\nHashtags: ${hashtags.join(" ")}</textarea>
+                        <button class="copy-btn" onclick="copiarTexto(this)">Copiar al portapapeles</button>
+                    `;
+                    img.remove();
+                }).catch(err => console.error(err));
+            }, 200);
         };
     };
     reader.readAsDataURL(fileInput.files[0]);
 }
 
-// Copiar al portapapeles
 function copiarTexto(btn){
     const text = btn.previousElementSibling.value;
     navigator.clipboard.writeText(text).then(()=>{ alert("Descripción copiada al portapapeles"); });
 }
 
-// Enlazar botón
 document.getElementById('generarBtn').addEventListener('click', analizarImagen);
 </script>
 </body>
 </html>
+
