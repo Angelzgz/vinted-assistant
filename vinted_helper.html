@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente Inteligente Vinted</title>
+<style>
+body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; background-color: #f4f4f4; }
+h1 { text-align: center; }
+label { display: block; margin-top: 15px; font-weight: bold; }
+input, textarea, select, button { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+textarea.output { height: 250px; }
+button { margin-top: 20px; background-color: #007bff; color: white; border: none; cursor: pointer; }
+button:hover { background-color: #0056b3; }
+ul { list-style: none; padding: 0; margin-top: 20px; }
+li { background: #fff; margin-bottom: 10px; padding: 10px; border-radius: 5px; }
+.copy-btn { margin-top: 5px; padding: 5px 10px; background: #28a745; color: white; border: none; cursor: pointer; }
+.copy-btn:hover { background: #1e7e34; }
+</style>
+</head>
+<body>
+<h1>Asistente Inteligente para Vinted</h1>
+
+<label>Tipo de prenda:</label>
+<input type="text" id="tipo" placeholder="Ej: Chaqueta">
+
+<label>Marca:</label>
+<input type="text" id="marca" placeholder="Ej: Ellen Rose">
+
+<label>Color:</label>
+<input type="text" id="color" placeholder="Ej: Rojo Vibrante / Rojo Fuego">
+
+<label>Talla:</label>
+<input type="text" id="talla" placeholder="Ej: L">
+
+<label>Estilo:</label>
+<input type="text" id="estilo" placeholder="Ej: Biker / Motera">
+
+<label>Material:</label>
+<input type="text" id="material" placeholder="Ej: Polipiel (55% PU, 45% viscosa)">
+
+<label>Medidas (Hombro a Hombro, Sisa, Largo Total, Largo de Manga):</label>
+<input type="text" id="medidas" placeholder="Ej: 43, 51, 63, 57">
+
+<label>Estado:</label>
+<input type="text" id="estado" placeholder="Ej: Buen estado general. Cremalleras funcionan correctamente.">
+
+<button onclick="generarArticulo()">Generar Descripción</button>
+
+<textarea id="salida" class="output" readonly placeholder="Aquí aparecerá la descripción lista para copiar..."></textarea>
+
+<h2>Artículos guardados</h2>
+<ul id="lista-articulos"></ul>
+
+<script>
+// Función para generar descripción basada en los datos
+function generarArticulo() {
+    const tipo = document.getElementById('tipo').value;
+    const marca = document.getElementById('marca').value;
+    const color = document.getElementById('color').value;
+    const talla = document.getElementById('talla').value;
+    const estilo = document.getElementById('estilo').value;
+    const material = document.getElementById('material').value;
+    const medidas = document.getElementById('medidas').value.split(',').map(m => m.trim());
+    const estado = document.getElementById('estado').value;
+
+    const titulo = `${tipo} ${marca} ${color} Talla ${talla} Estilo ${estilo}`;
+    const subtitulo = `${tipo} efecto ${material} ${color} Cremalleras y detalle ${estilo}`;
+    const descripcion = `
+${titulo}
+
+${subtitulo}
+
+Marca: ${marca}
+Color: ${color}
+Talla Etiqueta: ${talla}
+Estilo Clave: ${estilo} en ${material}
+
+MEDIDAS EXACTAS (Planas)
+Hombro a Hombro: ${medidas[0]} cm
+Sisa (Axila a Axila): ${medidas[1]} cm
+Largo Total: ${medidas[2]} cm
+Largo de Manga (hombro a puño): ${medidas[3]} cm
+
+Estado y Defectos:
+${estado}
+
+Material: ${material}
+
+Acepto todas las ofertas que sean razonables.
+Condiciones de Venta: ❌ No acepto devoluciones. 📦 Envío rápido (1-2 días laborables).
+
+#ChaquetaRoja #Polipiel #TallaL #Biker #Motera #EllenRose #PielSintetica #Rojo #ModaMujer #Streetwear #Cazadora #Otoño #Guetada #EfectoPiel #RockStyle #Talla40 #MujerL #Cremalleras #Chaqueta #Outerwear
+`;
+
+    // Mostrar en el textarea
+    document.getElementById('salida').value = descripcion;
+
+    // Guardar artículo en la lista
+    const lista = document.getElementById('lista-articulos');
+    const li = document.createElement('li');
+    li.innerHTML = `<strong>${titulo}</strong><br>${descripcion}<br><button class="copy-btn" onclick="copiarTexto(this)">Copiar</button>`;
+    lista.appendChild(li);
+
+    // Limpiar campos si quieres
+    // document.getElementById('tipo').value = '';
+}
+
+// Copiar al portapapeles
+function copiarTexto(btn) {
+    const text = btn.previousSibling.textContent || btn.previousSibling.innerText;
+    navigator.clipboard.writeText(text);
+    alert('Descripción copiada al portapapeles');
+}
+</script>
+</body>
+</html>
